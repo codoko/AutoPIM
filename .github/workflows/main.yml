@@ -1,4 +1,4 @@
-name: Build Android APK Fixed
+name: Build Android APK
 
 on:
   push:
@@ -53,20 +53,11 @@ jobs:
         
     - name: Accept Android SDK licenses
       run: |
-        # 创建许可证目录
-        mkdir -p $HOME/android-sdk/licenses
-        
-        # 自动接受所有许可证
         yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
-        # 手动创建许可证文件（备用方案）
-        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/android-sdk/licenses/android-sdk-license
-        echo "d56a54d83f13727ed44686f57df3595b0e52862c" > $HOME/android-sdk/licenses/android-googletv-license
-        echo "33b6a2b64607f11b8fbb9a47f41937d56dcc4f89" > $HOME/android-sdk/licenses/android-sdk-preview-license
         
     - name: Install Android SDK components
       run: |
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools" "build-tools;36.1.0"
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools"
         
     - name: Install NDK
       run: |
@@ -114,4 +105,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: bin/inspectionapp-debug.apk
         asset_name: inspection-app.apk
-        asset_content_type: application/vnd.android.package-archive
+        asset_content_type: application/vn
