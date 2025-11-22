@@ -13,15 +13,15 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
         
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -79,13 +79,14 @@ jobs:
         buildozer -v android debug
         
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: inspection-app-apk
         path: bin/*.apk
         
     - name: Create Release
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,4 +105,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: bin/inspectionapp-debug.apk
         asset_name: inspection-app.apk
-        asset_content_type: application/vnd.android.package-archive
+        asset_content_type: application/vn
