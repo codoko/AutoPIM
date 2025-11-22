@@ -36,7 +36,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-setuptools git zip unzip openjdk-8-jdk
+        sudo apt-get install -y python3-setuptools git zip unzip openjdk-8-jdk wget
         
     - name: Install Android SDK
       run: |
@@ -49,19 +49,40 @@ jobs:
         # Set environment variables
         echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
+        echo "PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
         
     - name: Accept Android SDK licenses
       run: |
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # 创建 licenses 目录
+        mkdir -p $HOME/android-sdk/licenses
+        # 写入 Android SDK 许可证
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/android-sdk/licenses/android-sdk-license
+        echo "84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/android-sdk/licenses/android-sdk-preview-license
+        
+        # 使用 yes 命令自动接受所有许可证
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
         
     - name: Install Android SDK components
       run: |
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools"
+        # 更新 SDK Manager 本身
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --update
+        
+        # 安装必要的 Android SDK 组件
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools" "tools"
+        
+        # 如果需要其他版本的 build-tools，也可以安装
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;36.1.0"
         
     - name: Install NDK
       run: |
         $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.1.8937393"
+        
+    - name: Verify Android SDK installation
+      run: |
+        echo "Android SDK components:"
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --list_installed
+        echo "Aidl tool location:"
+        find $HOME/android-sdk -name "aidl" -type f
         
     - name: Setup Buildozer
       run: |
@@ -83,26 +104,3 @@ jobs:
       with:
         name: inspection-app-apk
         path: bin/*.apk
-        
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-        
-    - name: Upload Release Asset
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: bin/inspectionapp-debug.apk
-        asset_name: inspection-app.apk
-        asset_content_type: application/vn
