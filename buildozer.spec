@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = 巡检自动化
+title = PIM
 
 # (str) Package name
 package.name = inspectionapp
