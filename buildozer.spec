@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = PIM
+title = 巡检自动化
 
 # (str) Package name
 package.name = inspectionapp
@@ -19,7 +19,7 @@ source.include_exts = py,png,jpg,kv,atlas,txt,json
 version = 1.0.0
 
 # (list) Application requirements
-requirements = python3,kivy==2.2.1,python-dateutil
+requirements = python3,kivy,python-dateutil
 
 # (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
 orientation = portrait
