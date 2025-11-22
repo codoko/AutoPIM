@@ -20,62 +20,34 @@ jobs:
       with:
         python-version: '3.9'
         
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-          
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-setuptools git zip unzip openjdk-8-jdk
-        
-    - name: Install Android SDK
-      run: |
-        # Download and install Android SDK
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        unzip -q commandlinetools-linux-9477386_latest.zip
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-        
-        # Set environment variables
-        echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
-        
-    - name: Accept Android SDK licenses
-      run: |
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        
-    - name: Install Android SDK components
-      run: |
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0" "platform-tools"
-        
-    - name: Install NDK
-      run: |
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.1.8937393"
-        
+        sudo apt-get install -y \
+          python3-setuptools \
+          git \
+          zip \
+          unzip \
+          openjdk-8-jdk \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
+          cmake \
+          libffi-dev \
+          libssl-dev
+          
     - name: Setup Buildozer
       run: |
-        # Install buildozer
         pip install buildozer
+        pip install cython
         
-        # Create buildozer.spec if it doesn't exist
-        if [ ! -f buildozer.spec ]; then
-          buildozer init
-        fi
-        
-    - name: Build APK
+    - name: Build APK with Buildozer
       run: |
-        # Build the APK
         buildozer -v android debug
         
     - name: Upload APK
@@ -83,26 +55,3 @@ jobs:
       with:
         name: inspection-app-apk
         path: bin/*.apk
-        
-    - name: Create Release
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: Release v1.0.${{ github.run_number }}
-        draft: false
-        prerelease: false
-        
-    - name: Upload Release Asset
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: bin/inspectionapp-debug.apk
-        asset_name: inspection-app.apk
-        asset_content_type: application/vn
