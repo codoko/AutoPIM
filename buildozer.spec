@@ -27,6 +27,15 @@ orientation = portrait
 # (bool) Indicate if the application should be fullscreen or not
 fullscreen = 0
 
+# 指定 build tools 版本
+android.build_tools = 33.0.0
+
+# 添加更多必要的权限
+android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET,ACCESS_NETWORK_STATE,CAMERA
+
+# 添加更多可能的架构支持
+android.archs = arm64-v8a, armeabi-v7a
+
 [buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
