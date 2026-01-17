@@ -124,7 +124,7 @@ class LoginScreen(Screen):
 
     def do_login(self, instance):
         if self.password.text == "12138" and self.username.text and self.usercode.text:
-app = App.get_running_app()
+            app = App.get_running_app()
             app.user_info = {"name": self.username.text.strip(), "code": self.usercode.text.strip()}
             self.manager.current = 'control'
         else:
