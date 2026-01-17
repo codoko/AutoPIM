@@ -2,56 +2,24 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-        
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          python3-setuptools \
-          git \
-          zip \
-          unzip \
-          openjdk-8-jdk \
-          autoconf \
-          automake \
-          libtool \
-          pkg-config \
-          zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
-          cmake \
-          libffi-dev \
-          libssl-dev
-          
-    - name: Setup Buildozer
-      run: |
-        pip install buildozer
-        pip install cython
-        
-    - name: Build APK with Buildozer
-      run: |
-        buildozer -v android debug
-        
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: inspection-app-apk
-        path: bin/*.apk
+      - uses: actions/checkout@v3
+
+      - name: Build with Buildozer
+        uses: ArtemSerebriennikov/buildozer-action@v1
+        with:
+          save_cache: true
+          # 这一步会自动下载安卓 SDK 并进行打包，耗时约 15-20 分钟
+          buildozer_version: master
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: inspection-app
+          path: bin/*.apk
