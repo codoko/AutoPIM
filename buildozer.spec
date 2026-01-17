@@ -15,15 +15,13 @@ fullscreen = 0
 
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
-# ---------- 新增/修改部分 ----------
-android.accept_sdk_license = True    # 关键：自动接受所有 SDK 许可证
+# 自动接受所有 SDK 许可证（解决无交互环境下的许可证问题）
+android.accept_sdk_license = true
 
-android.api = 33                     # 降级到稳定版 33（原 34 容易拉取最新 Build-Tools 导致许可证问题）
+android.api = 33
 android.minapi = 21
-# 移除 android.sdk = 34（让 Buildozer 自动匹配 api 33）
 android.ndk = 25b
 android.archs = arm64-v8a, armeabi-v7a
-# -------------------------------------
 
 [buildozer]
 
