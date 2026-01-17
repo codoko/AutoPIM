@@ -5,14 +5,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Build with Buildozer
-        uses: ArtemSerebryakov/buildozer-action@v1
+        # 使用更新且维护更频繁的 buildozer action
+        uses: herbertopereira/buildozer-action@master
         with:
-          buildozer_version: master
           command: buildozer android debug
+          buildozer_version: master
+
       - name: Upload APK
-        uses: actions/upload-artifact@v2
+        # 升级到 v4 版本解决弃用问题
+        uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: InspectionApp-Debug-APK
           path: bin/*.apk
