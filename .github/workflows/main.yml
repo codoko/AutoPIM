@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # ← Changed from ubuntu-latest to ubuntu-22.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
@@ -26,7 +26,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip wheel setuptools
-          pip install buildozer cython==0.29.36
+          pip install buildozer  # 使用最新版 buildozer（自动兼容最新 cython，无需手动 pin）
+
+      - name: Accept Android SDK licenses
+        run: |
+          buildozer android update || true
+          yes | buildozer android clean || true  # 清理旧缓存，避免残留问题
 
       - name: Build APK with Buildozer
         run: |
