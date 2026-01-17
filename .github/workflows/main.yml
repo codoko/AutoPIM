@@ -14,13 +14,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Pull official Buildozer Docker image
-        run: docker pull kivy/buildozer:latest  
+        run: docker pull kivy/buildozer:latest
 
       - name: Build APK with Buildozer (in Docker)
         run: |
           docker run --volume "${{ github.workspace }}":/home/user/hostcwd \
                      kivy/buildozer:latest \
-                     hostcwd buildozer -v android debug
+                     buildozer -v android debug
+        # 关键：移除 "hostcwd"，直接传入 "buildozer -v android debug"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
