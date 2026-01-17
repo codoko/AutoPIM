@@ -1,49 +1,35 @@
-name: Android Build
-on: [push]
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    runs-on: ubuntu-latest
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          python-version: '3.10'
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libunwind-dev
-          sudo apt-get install -y \
-            build-essential \
-            git \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev
-          
-          # 关键修复：强制安装旧版 Cython 避免 "long" 类型报错
-          pip install --user --upgrade "Cython<3.0" buildozer virtualenv
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip3 install --user --upgrade buildozer cython
 
-      - name: Build with Buildozer
+      - name: Build APK
         run: |
-          export PATH=$PATH:$HOME/.local/bin
-          # 自动接受 SDK 协议并编译
-          yes | buildozer android debug
+          yes | buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: InspectionApp-Debug
+          name: app
           path: bin/*.apk
