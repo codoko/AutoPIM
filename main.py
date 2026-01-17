@@ -201,7 +201,7 @@ class MainScreen(Screen):
 
     def execute_script(self, instance):
         self.run_btn.disabled = True
-    self.log_output.text = "[b]开始运行...[/b]\n"
+        self.log_output.text = "[b]开始运行...[/b]\n"
         
         # 安卓数据路径
         data_path = "/storage/emulated/0/widgetone/apps/NormalPIM/data"
