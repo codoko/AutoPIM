@@ -23,12 +23,15 @@ jobs:
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
-      - name: Install Python dependencies
+      - name: Install Python dependencies (user install)
         run: |
-          pip install --upgrade pip wheel setuptools
-          pip install buildozer cython  # 关键：明确安装最新 cython，确保 cython 命令可用
+          pip install --user --upgrade pip wheel setuptools
+          pip install --user buildozer cython  # --user 确保可执行文件在 ~/.local/bin
 
-      - name: Clean previous builds (optional but recommended)
+      - name: Add user bin to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH  # 关键：让 cython 和 buildozer 命令可用
+
+      - name: Clean previous builds
         run: |
           buildozer android clean || true
 
