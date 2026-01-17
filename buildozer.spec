@@ -8,20 +8,22 @@ source.dir = .
 source.include_exts = py
 
 version = 1.0
-requirements = python3,kivy==2.2.1
+requirements = python3,kivy  # 移除版本锁定，使用最新兼容 Kivy
 
 orientation = portrait
 fullscreen = 0
 
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
-# 自动接受所有 SDK 许可证（解决无交互环境下的许可证问题）
 android.accept_sdk_license = true
 
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
 android.archs = arm64-v8a, armeabi-v7a
+
+# 为 Android 10+ 启用 legacy external storage（确保访问 /storage/emulated/0 路径）
+android.extra_manifest_application = android:requestLegacyExternalStorage="true"
 
 [buildozer]
 
