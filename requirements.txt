@@ -1,4 +1,0 @@
-kivy==2.2.1
-buildozer==1.5.0
-cython==0.29.33
-python-dateutil==2.8.2
