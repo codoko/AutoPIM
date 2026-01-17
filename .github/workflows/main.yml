@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04    # ← 这里改为 22.04，关键修复
 
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +22,14 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+
+      - name: Install Buildozer and Cython
+        run: |
           pip3 install --user --upgrade buildozer cython
+
+      - name: Add Buildozer to PATH
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build APK
         run: |
