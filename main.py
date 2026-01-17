@@ -19,12 +19,12 @@ class LoginScreen(Screen):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=30, spacing=15)
         
-        layout.add_widget(Label(text="巡检系统登录", font_size=24, size_hint_y=None, height=60))
+        layout.add_widget(Label(text="PIM", font_size=24, size_hint_y=None, height=60))
         
         # 三重输入框
-        self.username_input = TextInput(hint_text="请输入人员名", multiline=False)
-        self.usercode_input = TextInput(hint_text="请输入人员代码", multiline=False)
-        self.password_input = TextInput(hint_text="请输入默认密码", password=True, multiline=False)
+        self.username_input = TextInput(hint_text="用户名", multiline=False)
+        self.usercode_input = TextInput(hint_text="代码", multiline=False)
+        self.password_input = TextInput(hint_text="密码", password=True, multiline=False)
         
         login_btn = Button(text="登录", size_hint_y=None, height=60)
         login_btn.bind(on_press=self.check_login)
