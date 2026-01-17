@@ -7,21 +7,24 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest  # 可以用 latest，无需固定 22.04
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          buildozer_version: stable  # 或 master（最新开发版）
-          command: buildozer android debug
+      - name: Pull official Buildozer Docker image
+        run: docker pull kivy/buildozer:latest  
+
+      - name: Build APK with Buildozer (in Docker)
+        run: |
+          docker run --volume "${{ github.workspace }}":/home/user/hostcwd \
+                     kivy/buildozer:latest \
+                     hostcwd buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: xunjian-apk
-          path: bin/*.apk  # Action 会输出到 bin 目录
+          path: bin/*.apk
           if-no-files-found: error
