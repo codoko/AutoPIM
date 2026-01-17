@@ -1,14 +1,27 @@
 [app]
-title = PIMsysterm
-package.name = inspection_tool
-package.domain = org.test
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
-version = 1.0
-requirements = python3,kivy
 
-# 安卓相关权限（读写存储）
-android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE
-android.api = 33
+title = PIM System
+package.name = systempim
+package.domain = com.example.pim
+
+source.dir = .
+source.include_exts = py
+
+version = 1.0
+requirements = python3,kivy==2.2.1
+
+orientation = portrait
+fullscreen = 0
+
+android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+
+android.api = 34
 android.minapi = 21
-android.arch_arm64_v8a = True
+android.sdk = 34
+android.ndk = 25b
+android.archs = arm64-v8a, armeabi-v7a
+
+[buildozer]
+
+log_level = 2
+warn_on_root = 1
