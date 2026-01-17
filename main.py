@@ -80,7 +80,7 @@ class InspectionAutomator:
         if updated_tasks:
             self._save_json("TASK.txt", updated_tasks)
             self.log(f"\n=== 完成 ===\n成功处理: {ok_cnt} 个任务")
-def process_single_task(self, task: Dict) -> Optional[Dict]:
+    def process_single_task(self, task: Dict) -> Optional[Dict]:
         code = task.get("taskcode")
         plan_start = TimeUtil.parse(task.get("planstartdate", ""))
         plan_end = TimeUtil.parse(task.get("planenddate", ""))
