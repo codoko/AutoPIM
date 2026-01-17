@@ -26,12 +26,15 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip wheel setuptools
-          pip install buildozer  # 使用最新版 buildozer（自动兼容最新 cython，无需手动 pin）
+          pip install buildozer cython  # 关键：明确安装最新 cython，确保 cython 命令可用
+
+      - name: Clean previous builds (optional but recommended)
+        run: |
+          buildozer android clean || true
 
       - name: Accept Android SDK licenses
         run: |
-          buildozer android update || true
-          yes | buildozer android clean || true  # 清理旧缓存，避免残留问题
+          yes | buildozer android update || true
 
       - name: Build APK with Buildozer
         run: |
