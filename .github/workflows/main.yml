@@ -6,46 +6,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-
+  build-android:
+    runs-on: ubuntu-latest  # 可以用 latest，无需固定 22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          python-version: '3.11'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-
-      - name: Install Python dependencies (user install)
-        run: |
-          pip install --user --upgrade pip wheel setuptools
-          pip install --user buildozer cython  # --user 确保可执行文件在 ~/.local/bin
-
-      - name: Add user bin to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH  # 关键：让 cython 和 buildozer 命令可用
-
-      - name: Clean previous builds
-        run: |
-          buildozer android clean || true
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | buildozer android update || true
-
-      - name: Build APK with Buildozer
-        run: |
-          buildozer -v android debug
+          buildozer_version: stable  # 或 master（最新开发版）
+          command: buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: xunjian-apk
-          path: bin/*.apk
+          path: bin/*.apk  # Action 会输出到 bin 目录
           if-no-files-found: error
