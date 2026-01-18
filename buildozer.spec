@@ -16,6 +16,12 @@ orientation = portrait
 
 fullscreen = 1
 
+# 必须设置版本名称（显示给用户看的，比如 1.0）
+version = 1.0
+
+# 推荐设置版本代码（Android 内部用整数，必须递增，以后升级 APK 时改成 2、3...）
+numeric_version = 1
+
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
 android.api = 34
