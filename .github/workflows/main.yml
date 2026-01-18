@@ -7,10 +7,26 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04    # ← 这里改为 22.04，关键修复
+    runs-on: ubuntu-22.04
+    
+    # 增加内存和磁盘空间
+    env:
+      JAVA_OPTS: "-Xmx2g"  # 增加Java内存
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache Buildozer dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.buildozer
+            ~/.android
+            ~/.gradle
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -21,22 +37,62 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt install -y \
+            git zip unzip \
+            openjdk-17-jdk \
+            python3-pip python3-venv \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev \
+            libncursesw5-dev libtinfo5 \
+            cmake libffi-dev libssl-dev \
+            libsqlite3-dev libreadline-dev \
+            tk-dev libgdbm-dev libc6-dev \
+            libbz2-dev libffi-dev \
+            wget curl
+          # 清理不必要的包释放空间
+          sudo apt autoremove -y
+          sudo apt clean
 
       - name: Install Buildozer and Cython
         run: |
-          pip3 install --user --upgrade buildozer cython
+          # 使用虚拟环境避免权限问题
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip wheel setuptools
+          pip install buildozer cython
 
-      - name: Add Buildozer to PATH
+      - name: Set up Android SDK
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # 设置Android SDK接受许可证
+          mkdir -p ~/.android
+          echo "### User Sources for Android SDK Manager" > ~/.android/repositories.cfg
+          echo "count=0" >> ~/.android/repositories.cfg
+          # 接受Android SDK许可证
+          yes | sdkmanager --licenses 2>/dev/null || true
 
       - name: Build APK
+        timeout-minutes: 30  # 设置超时时间
         run: |
-          yes | buildozer -v android debug
+          source venv/bin/activate
+          # 不使用yes命令，直接运行buildozer并启用详细日志
+          echo "Starting buildozer with log level 2..."
+          buildozer android debug 2>&1 | tee build.log
+          # 如果失败，检查日志
+          if [ $? -ne 0 ]; then
+            echo "Build failed. Last 100 lines of log:"
+            tail -100 build.log
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app
+          name: app-apk
           path: bin/*.apk
+          
+      - name: Upload Build Log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build.log
