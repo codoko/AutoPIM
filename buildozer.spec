@@ -1,39 +1,29 @@
 [app]
 
-title = PIMSYS
+# 应用基本信息
+title = SYSPIM
+package.name = inspection_tool
+package.domain = org.yourdomain
 
-package.name = xunjianauto
-
-package.domain = org.example
-
+# 源码目录
 source.dir = .
+source.include_exts = py,png,jpg,kv,txt,atlas
 
-source.include_exts = py
-
-requirements = python3,kivy
-
-orientation = portrait
-
-fullscreen = 1
-
-# 必须设置版本名称（显示给用户看的，比如 1.0）
+# 版本
 version = 1.0
 
-# 推荐设置版本代码（Android 内部用整数，必须递增，以后升级 APK 时改成 2、3...）
-numeric_version = 1
+# 要求的 Python 版本和依赖
+requirements = python==3.11.6, kivy==2.3.0
 
-android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
-
-android.api = 34
-
+# Android 设置
+android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+android.api = 31
 android.minapi = 21
-
-android.sdk = 34
-
 android.ndk = 25b
+android.ndk_api = 21
 
-android.archs = arm64-v8a, armeabi-v7a
+# 图标 (可选，如果没有，使用默认)
+# icon.filename = %(source.dir)s/icon.png
 
 [buildozer]
-
 log_level = 2
