@@ -3,7 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
-  # 可选：也可手动触发
   workflow_dispatch:
 
 jobs:
@@ -20,14 +19,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: 🔧 安装 Buildozer 和 Cython（关键！）
+      - name: 🔧 安装 Buildozer 和 Cython
         run: |
           python -m pip install --upgrade pip
           pip install buildozer
-          # 必须使用兼容版本，否则 Kivy 编译会失败
           pip install "cython==0.29.36"
 
-      - name: 📦 安装系统依赖（Android SDK/NDK 所需）
+      - name: 📦 安装系统依赖
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
@@ -39,18 +37,36 @@ jobs:
             libsqlite3-dev wget curl llvm libncursesw5-dev \
             xz-utils tk-dev libffi-dev liblzma-dev
 
-          # 设置 Java 环境变量（Buildozer 需要）
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-      - name: 🛠️ 构建 APK（首次构建会下载 SDK/NDK，较慢）
+      - name: ⚙️ 预安装 Android SDK 并接受许可证（关键！）
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          PATH: $PATH:/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
         run: |
-          # 启用详细日志以便调试
+          # 创建 cmdline-tools 目录结构（Buildozer 期望的路径）
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+
+          # 下载 SDK Command-line Tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d /tmp/cmdline
+          mv /tmp/cmdline/cmdline-tools/* /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+
+          # 接受所有许可证（非交互式）
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+          # 可选：预安装常用组件（加速后续 buildozer 步骤）
+          sdkmanager "platforms;android-31" "build-tools;31.0.0" "ndk;25.1.8937393" "platform-tools"
+
+      - name: 🛠️ 构建 APK
+        run: |
+          # 强制 Buildozer 使用我们已配置好的 SDK
           buildozer -v android debug
 
-      - name: 📤 上传生成的 APK
+      - name: 📤 上传 APK
         uses: actions/upload-artifact@v4
         with:
           name: inspection-tool-apk
           path: bin/*.apk
-          if-no-files-found: error  # 如果没生成 APK 就报错
+          if-no-files-found: error
