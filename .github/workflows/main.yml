@@ -25,29 +25,33 @@ jobs:
           pip install buildozer
           pip install "cython==0.29.36"
 
-      - name: 📦 安装系统依赖（含 Autoconf 2.69）
+      - name: 📦 安装系统依赖（降级 autoconf + libtool）
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-
           sudo apt-get install -y \
             git zip unzip openjdk-17-jdk wget curl \
-            automake libtool pkg-config \
-            libffi-dev libssl-dev libxml2-dev libxslt1-dev \
+            pkg-config libffi-dev libssl-dev libxml2-dev libxslt1-dev \
             zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
-            libsqlite3-dev llvm libncursesw5-dev \
-            xz-utils tk-dev liblzma-dev autoconf-archive
+            libsqlite3-dev llvm libncursesw5-dev xz-utils tk-dev liblzma-dev
 
-          # 降级 Autoconf 到 2.69（解决 libffi 编译问题）
+          # 安装 Autoconf 2.69
           wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
           tar -xzf autoconf-2.69.tar.gz
           cd autoconf-2.69
           ./configure --prefix=/usr
-          make
+          make -j$(nproc)
           sudo make install
           cd ..
-          echo "Autoconf version:"
-          autoconf --version
+          
+          # 安装 Libtool 2.4.6
+          wget http://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz
+          tar -xzf libtool-2.4.6.tar.gz
+          cd libtool-2.4.6
+          ./configure --prefix=/usr
+          make -j$(nproc)
+          sudo make install
+          cd ..
 
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
