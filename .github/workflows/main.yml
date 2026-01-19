@@ -25,22 +25,34 @@ jobs:
           pip install buildozer
           pip install "cython==0.29.36"
 
-      - name: 📦 安装系统依赖
+      - name: 📦 安装系统依赖（含 Autoconf 2.69）
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
+
           sudo apt-get install -y \
             git zip unzip openjdk-17-jdk wget curl \
-            autoconf automake libtool pkg-config \
+            automake libtool pkg-config \
             libffi-dev libssl-dev libxml2-dev libxslt1-dev \
             zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
             libsqlite3-dev llvm libncursesw5-dev \
-            xz-utils tk-dev libffi-dev liblzma-dev
+            xz-utils tk-dev liblzma-dev autoconf-archive
+
+          # 降级 Autoconf 到 2.69（解决 libffi 编译问题）
+          wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
+          tar -xzf autoconf-2.69.tar.gz
+          cd autoconf-2.69
+          ./configure --prefix=/usr
+          make
+          sudo make install
+          cd ..
+          echo "Autoconf version:"
+          autoconf --version
 
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-      - name: ⚙️ 预安装 Android SDK 并接受许可证（含兼容性修复）
+      - name: ⚙️ 预安装 Android SDK 并接受许可证
         run: |
           export ANDROID_HOME="/home/runner/.buildozer/android/platform/android-sdk"
           export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
@@ -53,7 +65,7 @@ jobs:
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager "platforms;android-31" "build-tools;31.0.0" "ndk;25.1.8937393" "platform-tools"
 
-          # --- 兼容旧版 Buildozer 的关键修复 ---
+          # 兼容旧版 Buildozer
           mkdir -p "$ANDROID_HOME/tools/bin"
           ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/tools/bin/sdkmanager"
           ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$ANDROID_HOME/tools/bin/avdmanager"
