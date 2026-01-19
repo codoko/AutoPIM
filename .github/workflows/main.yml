@@ -40,39 +40,24 @@ jobs:
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-           - name: ⚙️ 预安装 Android SDK 并接受许可证（含兼容性修复）
-
+      - name: ⚙️ 预安装 Android SDK 并接受许可证（含兼容性修复）
         run: |
-
           export ANDROID_HOME="/home/runner/.buildozer/android/platform/android-sdk"
-
           export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
 
-
           mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
-
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-
           unzip -q cmdline-tools.zip -d /tmp/cmdline
-
           mv /tmp/cmdline/cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
 
-
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
-
           sdkmanager "platforms;android-31" "build-tools;31.0.0" "ndk;25.1.8937393" "platform-tools"
 
-
           # --- 兼容旧版 Buildozer 的关键修复 ---
-
           mkdir -p "$ANDROID_HOME/tools/bin"
-
           ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/tools/bin/sdkmanager"
-
           ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$ANDROID_HOME/tools/bin/avdmanager"
-
           cp -r "$ANDROID_HOME/cmdline-tools/latest/lib" "$ANDROID_HOME/tools/" 2>/dev/null || true
-
 
       - name: 🛠️ 构建 APK
         run: |
