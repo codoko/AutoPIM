@@ -30,38 +30,33 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk \
+            git zip unzip openjdk-17-jdk wget curl \
             autoconf automake libtool pkg-config \
             libffi-dev libssl-dev libxml2-dev libxslt1-dev \
             zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
-            libsqlite3-dev wget curl llvm libncursesw5-dev \
+            libsqlite3-dev llvm libncursesw5-dev \
             xz-utils tk-dev libffi-dev liblzma-dev
 
           sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
           sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-      - name: ⚙️ 预安装 Android SDK 并接受许可证（关键！）
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          PATH: $PATH:/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
+      - name: ⚙️ 预安装 Android SDK 并接受许可证
         run: |
-          # 创建 cmdline-tools 目录结构（Buildozer 期望的路径）
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          export ANDROID_HOME="/home/runner/.buildozer/android/platform/android-sdk"
+          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
 
-          # 下载 SDK Command-line Tools
+          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
+
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip -d /tmp/cmdline
-          mv /tmp/cmdline/cmdline-tools/* /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          mv /tmp/cmdline/cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
 
-          # 接受所有许可证（非交互式）
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
-          # 可选：预安装常用组件（加速后续 buildozer 步骤）
           sdkmanager "platforms;android-31" "build-tools;31.0.0" "ndk;25.1.8937393" "platform-tools"
 
       - name: 🛠️ 构建 APK
         run: |
-          # 强制 Buildozer 使用我们已配置好的 SDK
           buildozer -v android debug
 
       - name: 📤 上传 APK
