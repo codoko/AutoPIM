@@ -1,158 +1,131 @@
-from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
-from kivy.uix.scrollview import ScrollView
-from kivy.clock import Clock
-from kivy.core.window import Window
+# main.py
+import json
+import os
+import random
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
-import sys
-from io import StringIO
-from threading import Thread
+class TimeUtil:
+    FMT = "%Y-%m-%d %H:%M:%S"
+    @staticmethod
+    def parse(dt_str: str) -> Optional[datetime]:
+        try: return datetime.strptime(dt_str, TimeUtil.FMT)
+        except ValueError: return None
+    @staticmethod
+    def format(dt: datetime) -> str: return dt.strftime(TimeUtil.FMT)
+    @staticmethod
+    def rand_sec(max_sec: int = 59) -> timedelta:
+        return timedelta(seconds=random.randint(0, max_sec))
 
-from automator import InspectionAutomator
+class IOUtil:
+    @staticmethod
+    def load(parent: Path, filename: str) -> Optional[List[Dict]]:
+        path = parent / filename
+        try:
+            with path.open(encoding="utf-8") as f:
+                data = json.loads(f.read().strip())
+            return data
+        except: return None
 
-
-class LoginScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
-
-        layout.add_widget(Label(text='巡检自动化登录', font_size='24sp', size_hint_y=None, height=60))
-
-        self.username_input = TextInput(hint_text='用户名', multiline=False, size_hint_y=None, height=50)
-        layout.add_widget(self.username_input)
-
-        self.usercode_input = TextInput(hint_text='用户代码', multiline=False, size_hint_y=None, height=50)
-        layout.add_widget(self.usercode_input)
-
-        self.password_input = TextInput(hint_text='密码', password=True, multiline=False, size_hint_y=None, height=50)
-        layout.add_widget(self.password_input)
-
-        login_btn = Button(text='登录', size_hint_y=None, height=60)
-        login_btn.bind(on_press=self.login)
-        layout.add_widget(login_btn)
-
-        self.status_label = Label(text='', color=(1, 0, 0, 1), size_hint_y=None, height=40)
-        layout.add_widget(self.status_label)
-
-        self.add_widget(layout)
-
-    def login(self, instance):
-        username = self.username_input.text.strip()
-        usercode = self.usercode_input.text.strip()
-        password = self.password_input.text
-
-        if password != '12138':
-            self.status_label.text = '密码错误（默认密码：12138）'
-            return
-
-        if not username or not usercode:
-            self.status_label.text = '用户名和用户代码不能为空'
-            return
-
-        app = App.get_running_app()
-        app.automator.user_info["username"] = username
-        app.automator.user_info["usercode"] = usercode
-
-        if app.automator.find_user_id():
-            self.manager.current = 'main'
-        else:
-            self.status_label.text = '未找到匹配的用户信息'
-
-
-class MainScreen(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-
-        self.scroll = ScrollView()
-        self.log_label = Label(
-            text='登录成功，准备就绪。\n点击下方按钮开始执行巡检。\n',
-            size_hint=(1, None),
-            text_size=(Window.width - 40, None),
-            halign='left',
-            valign='top',
-            markup=True
-        )
-        self.log_label.bind(texture_size=self.log_label.setter('height'))
-        self.scroll.add_widget(self.log_label)
-        layout.add_widget(self.scroll)
-
-        execute_btn = Button(text='执行巡检自动化', size_hint_y=None, height=80, background_normal='', background_color=(0, 0.6, 0, 1))
-        execute_btn.bind(on_press=self.execute)
-        layout.add_widget(execute_btn)
-
-        self.add_widget(layout)
-
-    def execute(self, instance):
-        app = App.get_running_app()
-        self.log_label.text += '\n=== 开始执行巡检 ===\n'
-
-        # 重定向print输出到StringIO
-        app.log_buffer = StringIO()
-        old_stdout = sys.stdout
-        sys.stdout = app.log_buffer
-
-        def run_task():
-            try:
-                updated_tasks = []
-                ok_cnt = 0
-                for tsk in app.automator.task_list:
-                    ret = app.automator.process_single_task(tsk)
-                    if ret:
-                        updated_tasks.append(ret)
-                        ok_cnt += 1
-
-                if updated_tasks and IOUtil.save(app.automator.data_dir, "TASK.txt", updated_tasks):
-                    print(f"\n✓ 成功更新 TASK.txt")
-
-                print(f"\n=== 巡检自动化完成 ===")
-                print(f"总任务数: {len(app.automator.task_list)} | 成功处理: {ok_cnt}")
-            except Exception as e:
-                print(f"\n执行出错: {e}")
-            finally:
-                sys.stdout = old_stdout
-
-        Thread(target=run_task).start()
-        Clock.schedule_interval(app.update_log, 0.5)
-
-class InspectionApp(App):
-    def build(self):
-        Window.clearcolor = (1, 1, 1, 1)
-        data_dir = "/storage/emulated/0/widgetone/apps/NormalPIM/data"
-        self.automator = InspectionAutomator(data_dir)
-
-        if not self.automator.load_checker_list():
-            return Label(text='无法加载 CHECKERLIST.txt\n请检查文件路径和权限', color=(1,0,0,1), font_size='20sp')
-
-        if not self.automator.load_task_list():
-            return Label(text='无法加载 TASK.txt\n请检查文件路径和权限', color=(1,0,0,1), font_size='20sp')
-
-        sm = ScreenManager()
-        sm.add_widget(LoginScreen(name='login'))
-        sm.add_widget(MainScreen(name='main'))
-        return sm
-
-    def on_start(self):
-        self.root.current = 'login'
-
-    log_buffer = None
-
-    def update_log(self, dt):
-        if self.log_buffer:
-            new_text = self.log_buffer.getvalue()
-            if new_text:
-                main_screen = self.root.get_screen('main')
-                main_screen.log_label.text += new_text
-                self.log_buffer.truncate(0)
-                self.log_buffer.seek(0)
-                main_screen.scroll.scroll_y = 0  # 滚动到底部
+    @staticmethod
+    def save(parent: Path, filename: str, data: List[Dict]) -> bool:
+        path = parent / filename
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            json_str = json.dumps(data, ensure_ascii=False, indent=None, separators=(",", ":"))
+            path.write_text(json_str, encoding="utf-8")
             return True
+        except: return False
+
+class InspectionAutomator:
+    def __init__(self, data_dir: str):
+        self.data_dir = Path(data_dir)
+        self.checker_list: List[Dict] = []
+        self.task_list: List[Dict] = []
+        self.user_info: Dict[str, str] = {}
+
+    def load_checker_list(self) -> bool:
+        self.checker_list = IOUtil.load(self.data_dir, "CHECKERLIST.txt") or []
+        return bool(self.checker_list)
+
+    def load_task_list(self) -> bool:
+        self.task_list = IOUtil.load(self.data_dir, "TASK.txt") or []
+        return bool(self.task_list)
+
+    def find_user_id(self, username: str, usercode: str) -> bool:
+        for chk in self.checker_list:
+            if chk.get("username") == username and chk.get("usercode") == usercode:
+                self.user_info = {"username": username, "usercode": usercode, "userid": chk["userid"]}
+                return True
         return False
 
+    def process_single_task(self, task: Dict) -> Optional[Dict]:
+        code = task.get("taskcode")
+        plan_start_str = task.get("planstartdate")
+        plan_end_str = task.get("planenddate")
 
-if __name__ == '__main__':
-    InspectionApp().run()
+        if not all([code, plan_start_str, plan_end_str]):
+            return None
+
+        plan_start = TimeUtil.parse(plan_start_str)
+        plan_end = TimeUtil.parse(plan_end_str)
+        if not plan_start or not plan_end: return None
+
+        items = IOUtil.load(self.data_dir, f"TASKITEMLIST{code}.txt")
+        if not items: return None
+
+        duration = plan_end - plan_start
+        if duration >= timedelta(hours=4):
+            start = plan_start + timedelta(hours=random.randint(1, 3), minutes=random.randint(1, 10)) + TimeUtil.rand_sec()
+        else:
+            start = plan_start + timedelta(minutes=random.randint(1, 5)) + TimeUtil.rand_sec()
+
+        check_times = [start.replace(second=random.randint(0, 59))]
+        cur = check_times[0]
+        for _ in range(len(items) - 1):
+            cur += timedelta(minutes=random.randint(2, 4)) + TimeUtil.rand_sec()
+            check_times.append(cur)
+
+        latest = check_times[-1]
+        end = latest + timedelta(minutes=random.randint(1, 2)) + TimeUtil.rand_sec()
+        if end > plan_end: end = plan_end - TimeUtil.rand_sec(30)
+
+        for it, chk_time in zip(items, check_times):
+            it.update({
+                "checkusrid": self.user_info["userid"],
+                "checkusrname": self.user_info["username"],
+                "checktime": TimeUtil.format(chk_time),
+                "checkresult": "ZC",
+                "fdesc": "正常",
+            })
+
+        if IOUtil.save(self.data_dir, f"TASKITEMLIST{code}.txt", items):
+            return task | {"startdate": TimeUtil.format(start), "donedate": TimeUtil.format(end)}
+        return None
+
+    def run(self) -> str:
+        """执行主逻辑，返回结果字符串"""
+        if not self.load_checker_list() or not self.load_task_list():
+            return "错误：缺少 CHECKERLIST.txt 或 TASK.txt 文件"
+
+        updated_tasks = []
+        for tsk in self.task_list:
+            ret = self.process_single_task(tsk)
+            if ret: updated_tasks.append(ret)
+
+        if updated_tasks and IOUtil.save(self.data_dir, "TASK.txt", updated_tasks):
+            return f"成功！更新了 {len(updated_tasks)} 个任务。"
+        else:
+            return "执行失败或没有任务可处理。"
+
+# 供 GUI 调用的函数
+def start_inspection(username: str, usercode: str) -> str:
+    # 注意：Android 上的路径通常为应用私有目录或特定挂载点
+    # 这里使用示例路径，你可能需要根据实际手机存储结构调整
+    data_dir = "/storage/emulated/0/widgetone/apps/NormalPIM/data"
+    auto = InspectionAutomator(data_dir)
+    if auto.find_user_id(username, usercode):
+        return auto.run()
+    else:
+        return "用户名或代码不匹配！"
