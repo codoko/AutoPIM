@@ -1,34 +1,56 @@
-steps:
-- name: 检出代码
-  uses: actions/checkout@v4
+name: Build Android APK
 
-- name: 设置 Python
-  uses: actions/setup-python@v5
-  with:
-    python-version: "3.10"
+on:
+  push:
+    branches: [ main ]
+  # 可选：也可手动触发
+  workflow_dispatch:
 
-- name: 安装 Buildozer 和依赖
-  run: |
-    python -m pip install --upgrade pip
-    pip install buildozer
+jobs:
+  build:
+    name: Build APK with Buildozer
+    runs-on: ubuntu-latest
 
-- name: 安装 Cython（关键！）
-  run: |
-    pip install "cython==0.29.36"
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
 
-- name: 安装系统依赖
-  run: |
-    sudo dpkg --add-architecture i386
-    sudo apt-get update
-    sudo apt-get install -y git zip unzip openjdk-17-jdk
-    sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+      - name: 🐍 设置 Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-- name: 构建 APK
-  run: |
-    buildozer -v android debug
+      - name: 🔧 安装 Buildozer 和 Cython（关键！）
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer
+          # 必须使用兼容版本，否则 Kivy 编译会失败
+          pip install "cython==0.29.36"
 
-- name: 上传 APK
-  uses: actions/upload-artifact@v4
-  with:
-    name: inspection-tool-apk
-    path: bin/*.apk
+      - name: 📦 安装系统依赖（Android SDK/NDK 所需）
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf automake libtool pkg-config \
+            libffi-dev libssl-dev libxml2-dev libxslt1-dev \
+            zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
+            libsqlite3-dev wget curl llvm libncursesw5-dev \
+            xz-utils tk-dev libffi-dev liblzma-dev
+
+          # 设置 Java 环境变量（Buildozer 需要）
+          sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+          sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
+
+      - name: 🛠️ 构建 APK（首次构建会下载 SDK/NDK，较慢）
+        run: |
+          # 启用详细日志以便调试
+          buildozer -v android debug
+
+      - name: 📤 上传生成的 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspection-tool-apk
+          path: bin/*.apk
+          if-no-files-found: error  # 如果没生成 APK 就报错
