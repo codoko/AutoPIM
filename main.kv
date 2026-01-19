@@ -1,0 +1,91 @@
+# main.kv
+BoxLayout:
+    id: root_layout
+    orientation: 'vertical'
+    padding: dp(20)
+    spacing: dp(10)
+
+    ScreenManager:
+        id: screen_manager
+        size_hint: 1, 0.9
+
+        # --- 登录屏幕 ---
+        Screen:
+            name: 'login'
+            BoxLayout:
+                orientation: 'vertical'
+                padding: dp(30)
+                spacing: dp(20)
+                size_hint: 0.8, 0.8
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+                Label:
+                    text: "巡检自动化登录"
+                    font_size: '24sp'
+                    size_hint_y: None
+                    height: dp(50)
+
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(10)
+
+                    Label: text: "用户名:"
+                    TextInput:
+                        id: username_input
+                        multiline: False
+                        hint_text: "输入用户名"
+
+                    Label: text: "用户代码:"
+                    TextInput:
+                        id: usercode_input
+                        multiline: False
+                        hint_text: "输入代码"
+
+                    Label: text: "默认密码:"
+                    TextInput:
+                        id: password_input
+                        password: True
+                        multiline: False
+                        hint_text: "输入默认密码"
+
+                Button:
+                    text: "登录"
+                    size_hint_y: None
+                    height: dp(60)
+                    on_press: app.check_login()
+
+        # --- 主屏幕 ---
+        Screen:
+            name: 'main'
+            BoxLayout:
+                orientation: 'vertical'
+                padding: dp(30)
+                spacing: dp(20)
+
+                Label:
+                    id: welcome_label
+                    text: "欢迎使用巡检自动化"
+                    font_size: '24sp'
+                    size_hint_y: None
+                    height: dp(50)
+
+                Button:
+                    text: "执行巡检脚本"
+                    font_size: '20sp'
+                    size_hint_y: None
+                    height: dp(80)
+                    on_press: app.run_script()
+
+                Label:
+                    id: result_label
+                    text: ""
+                    font_size: '16sp'
+                    color: 0, 1, 0, 1 # 绿色
+                    size_hint_y: None
+                    height: dp(40)
+
+    BoxLayout:
+        size_hint: 1, 0.1
+        Button:
+            text: "退出"
+            on_press: app.stop()
