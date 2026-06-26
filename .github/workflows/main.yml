@@ -1,87 +1,43 @@
 name: Build Android APK
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build:
-    name: Build APK with Buildozer
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04
     steps:
-      - name: 📥 检出代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🐍 设置 Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.11'
 
-      - name: 🔧 安装 Buildozer 和 Cython
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install buildozer
-          pip install "cython==0.29.36"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            autoconf libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev
+          pip install buildozer cython
 
-      - name: 📦 安装系统依赖（降级 autoconf + libtool）
+      - name: Build APK
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk wget curl \
-            pkg-config libffi-dev libssl-dev libxml2-dev libxslt1-dev \
-            zlib1g-dev libncurses5-dev libbz2-dev libreadline-dev \
-            libsqlite3-dev llvm libncursesw5-dev xz-utils tk-dev liblzma-dev
+          cd kimi_apk
+          buildozer android debug
 
-          # 安装 Autoconf 2.69
-          wget http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
-          tar -xzf autoconf-2.69.tar.gz
-          cd autoconf-2.69
-          ./configure --prefix=/usr
-          make -j$(nproc)
-          sudo make install
-          cd ..
-          
-          # 安装 Libtool 2.4.6
-          wget http://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz
-          tar -xzf libtool-2.4.6.tar.gz
-          cd libtool-2.4.6
-          ./configure --prefix=/usr
-          make -j$(nproc)
-          sudo make install
-          cd ..
-
-          sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
-          sudo update-alternatives --set javac /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
-
-      - name: ⚙️ 预安装 Android SDK 并接受许可证
-        run: |
-          export ANDROID_HOME="/home/runner/.buildozer/android/platform/android-sdk"
-          export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
-
-          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d /tmp/cmdline
-          mv /tmp/cmdline/cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
-
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-31" "build-tools;31.0.0" "ndk;25.1.8937393" "platform-tools"
-
-          # 兼容旧版 Buildozer
-          mkdir -p "$ANDROID_HOME/tools/bin"
-          ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/tools/bin/sdkmanager"
-          ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$ANDROID_HOME/tools/bin/avdmanager"
-          cp -r "$ANDROID_HOME/cmdline-tools/latest/lib" "$ANDROID_HOME/tools/" 2>/dev/null || true
-
-      - name: 🛠️ 构建 APK
-        run: |
-          buildozer -v android debug
-
-      - name: 📤 上传 APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: inspection-tool-apk
-          path: bin/*.apk
-          if-no-files-found: error
+          name: inspection-apk
+          path: kimi_apk/bin/*.apk
